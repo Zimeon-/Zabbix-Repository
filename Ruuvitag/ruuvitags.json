@@ -1,0 +1,12 @@
+{
+   "config": [
+      {
+         "mac": "xx:xx:xx:xx:xx:xx",
+         "name": "example"
+      },
+      {
+         "mac": "xx:xx:xx:xx:xx:xx",
+         "name": "tag2"
+      }
+   ]
+}
