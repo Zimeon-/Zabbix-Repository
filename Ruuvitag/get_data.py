@@ -3,8 +3,9 @@ import json, re
 import os, time, socket, subprocess
 
 def load_ruuvitags():
-   f = open('ruuvitags.json')
+   f = open("/home/ruuvi/Ruuvitag/ruuvitags.json")
    data = json.load(f)
+   f.close()
    return data
 
 def get_ruuvitag_data(mac):
@@ -20,8 +21,7 @@ def get_ruuvitag_data(mac):
 def write_zbx_data(zbxhostname, tag, state):
    for key in state:
       value = state[key]
-      f.write("{} ruuvitag.{}.{} {}\n".format(zbxhostname, tag["name"], key, value))
-
+      f.write("{} ruuvitag.{}[{}] {}\n".format(zbxhostname, key, tag["name"], value))
 
 #Load Ruuvitags from config
 ruuvitags = load_ruuvitags()
@@ -35,21 +35,25 @@ zbxhostname = socket.gethostname()
 for tag in ruuvitags['config']:
    sensor_data = get_ruuvitag_data(tag["mac"])
    write_zbx_data(zbxhostname, tag, sensor_data)
-
-#Use Zabbix Sender
-zbx_cmd='/usr/bin/zabbix_sender -c /etc/zabbix/zabbix_agentd.conf -i /tmp/ruuvisendor.data'
+f.close()
 #Catch Zabbix Sender output
-proc = subprocess.Popen([zbx_cmd], stdout=subprocess.PIPE, shell=True)
+proc = subprocess.Popen("/usr/bin/zabbix_sender -c /etc/zabbix/zabbix_agentd.conf -i /tmp/ruuvisender-{}.data".format(epoch_time), shell=True, stdout=subprocess.PIPE)
 (out, err) = proc.communicate()
-r = re.findall(r"failed: (\d+)",out.decode('utf-8'))
+zbxr = re.findall(r"failed: (\d+)",out.decode('utf-8'))
+zbxt = re.findall(r"total: (\d+)",out.decode('utf-8'))
 #Check if sender failed any items
-if int(r[0]) == 0:
+if zbxr and int(zbxr[0]) == 0:
    print("No Errors Detected, removing temporary file {}".format(zbxfile))
+   os.remove(zbxfile)
+elif int(zbxt[0]) == 0:
+   print("Nothing send to Zabbix Server, use {} to debug Zabbix Sender issues.".format(zbxfile))
+   f=open(zbxfile, "a")
+   f.write("ZBX Sender:{}".format(out.decode('utf-8')))
    #Close file
    f.close()
-   os.remove(zbxfile)
 else:
    print("Errors found in zabbix sender process. Use {} to debug Zabbix Sender issues.".format(zbxfile))
+   f=open(zbxfile, "a")
    f.write("ZBX Sender:{}".format(out.decode('utf-8')))
    #Close file
    f.close()
