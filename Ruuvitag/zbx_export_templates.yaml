@@ -1,0 +1,207 @@
+zabbix_export:
+  version: '6.2'
+  date: '2022-12-26T18:13:40Z'
+  template_groups:
+    -
+      uuid: 7df96b18c230490a9a0a9e2307226338
+      name: Templates
+  templates:
+    -
+      uuid: edde0dcdab3e48f3ad0ab10202d583cc
+      template: Ruuvitag
+      name: Ruuvitag
+      groups:
+        -
+          name: Templates
+      items:
+        -
+          uuid: 9ff3d6250df24d2e8e9a5d24a837c3ea
+          name: 'Ruuvitag Get Data'
+          key: ruuvitag.get
+          history: 30d
+          trends: '0'
+          status: DISABLED
+          value_type: TEXT
+          description: 'Enable this item, if Zabbix Passive agent is enabled. Might case issues with raspberry pi installations. Crontab recommended.'
+      discovery_rules:
+        -
+          uuid: 463c3674f6514414bf070cdf2d081da0
+          name: 'Discover Ruuvitags'
+          key: ruuvitag.discover
+          delay: 12h
+          item_prototypes:
+            -
+              uuid: 2305726757b04d6b88de9523f7f97edb
+              name: 'Ruuvitag Acceleration ({#DISPLAYNAME})'
+              type: TRAP
+              key: 'ruuvitag.acceleration[{#NAME}]'
+              delay: '0'
+              value_type: FLOAT
+              tags:
+                -
+                  tag: Application
+                  value: Ruuvitag
+            -
+              uuid: 61dd6f686ef74dd69f265d996af349c8
+              name: 'Ruuvitag Acceleration_x ({#DISPLAYNAME})'
+              type: TRAP
+              key: 'ruuvitag.acceleration_x[{#NAME}]'
+              delay: '0'
+              value_type: FLOAT
+              tags:
+                -
+                  tag: Application
+                  value: Ruuvitag
+            -
+              uuid: 3ebf8a546a6e49eeaba242d16cb65622
+              name: 'Ruuvitag Acceleration_y ({#DISPLAYNAME})'
+              type: TRAP
+              key: 'ruuvitag.acceleration_y[{#NAME}]'
+              delay: '0'
+              value_type: FLOAT
+              tags:
+                -
+                  tag: Application
+                  value: Ruuvitag
+            -
+              uuid: 9b752176b77941a7b351bb286b4e694a
+              name: 'Ruuvitag Acceleration_z ({#DISPLAYNAME})'
+              type: TRAP
+              key: 'ruuvitag.acceleration_z[{#NAME}]'
+              delay: '0'
+              value_type: FLOAT
+              tags:
+                -
+                  tag: Application
+                  value: Ruuvitag
+            -
+              uuid: 498716cd2a354cc1b5581c895a5038ae
+              name: 'Ruuvitag Battery ({#DISPLAYNAME})'
+              type: TRAP
+              key: 'ruuvitag.battery[{#NAME}]'
+              delay: '0'
+              tags:
+                -
+                  tag: Application
+                  value: Ruuvitag
+              trigger_prototypes:
+                -
+                  uuid: db52883082754f74b1e8019d7611e25e
+                  expression: 'last(/Ruuvitag/ruuvitag.battery[{#NAME}],#1)<=2600'
+                  name: 'Ruuvitag ({#DISPLAYNAME}) battery below 2600mV'
+                  priority: HIGH
+                  description: 'https://f.ruuvi.com/t/battery-consumption-tracking/214'
+                -
+                  uuid: 28529672a0af4e61a83bfcfcf4c28fa7
+                  expression: 'last(/Ruuvitag/ruuvitag.battery[{#NAME}],#1)<=2650'
+                  name: 'Ruuvitag ({#DISPLAYNAME}) battery below 2650mV'
+                  priority: AVERAGE
+                  description: 'https://f.ruuvi.com/t/battery-consumption-tracking/214'
+                -
+                  uuid: e6246070c1a14157a4a865d69a3eda4a
+                  expression: 'nodata(/Ruuvitag/ruuvitag.battery[{#NAME}],60m)=1'
+                  name: 'Ruuvitag ({#DISPLAYNAME}) Data Missing for 60min'
+                  priority: HIGH
+            -
+              uuid: a8b7e62e464543bbab38e75736f80fcc
+              name: 'Ruuvitag Data Format ({#DISPLAYNAME})'
+              type: TRAP
+              key: 'ruuvitag.data_format[{#NAME}]'
+              delay: '0'
+              tags:
+                -
+                  tag: Application
+                  value: Ruuvitag
+            -
+              uuid: 5424e72b804c47968ff7b19c683312be
+              name: 'Ruuvitag humidity ({#DISPLAYNAME})'
+              type: TRAP
+              key: 'ruuvitag.humidity[{#NAME}]'
+              delay: '0'
+              value_type: FLOAT
+              tags:
+                -
+                  tag: Application
+                  value: Ruuvitag
+            -
+              uuid: f56b07b55177444a9dc95d1fc02ed15c
+              name: 'Ruuvitag Mac ({#DISPLAYNAME})'
+              type: TRAP
+              key: 'ruuvitag.mac[{#NAME}]'
+              delay: '0'
+              trends: '0'
+              value_type: TEXT
+              tags:
+                -
+                  tag: Application
+                  value: Ruuvitag
+            -
+              uuid: 9fb268984e77432b80ae9e80f09e5fe0
+              name: 'Ruuvitag Measurement Seq ({#DISPLAYNAME})'
+              type: TRAP
+              key: 'ruuvitag.measurement_sequence_number[{#NAME}]'
+              delay: '0'
+              tags:
+                -
+                  tag: Application
+                  value: Ruuvitag
+            -
+              uuid: f3046d6242b6473db15cc719cf7e336e
+              name: 'Ruuvitag Movement Counter ({#DISPLAYNAME})'
+              type: TRAP
+              key: 'ruuvitag.movement_counter[{#NAME}]'
+              delay: '0'
+              tags:
+                -
+                  tag: Application
+                  value: Ruuvitag
+            -
+              uuid: 3c77c6ec92c54ed78cd2213cfd61430e
+              name: 'Ruuvitag Pressure ({#DISPLAYNAME})'
+              type: TRAP
+              key: 'ruuvitag.pressure[{#NAME}]'
+              delay: '0'
+              value_type: FLOAT
+              tags:
+                -
+                  tag: Application
+                  value: Ruuvitag
+            -
+              uuid: 5bb1369b77ab482b9f0e841890920d22
+              name: 'Ruuvitag Temperature ({#DISPLAYNAME})'
+              type: TRAP
+              key: 'ruuvitag.temperature[{#NAME}]'
+              delay: '0'
+              value_type: FLOAT
+              units: c
+              tags:
+                -
+                  tag: Application
+                  value: Ruuvitag
+              trigger_prototypes:
+                -
+                  uuid: e3ad8fbe3e214a29a8613c06ad6e2624
+                  expression: 'avg(/Ruuvitag/ruuvitag.temperature[{#NAME}],#5)<=3'
+                  name: 'Ruuvitag ({#DISPLAYNAME}) Temperature below 3c'
+                  priority: HIGH
+            -
+              uuid: 9a94fd5ad5824904b4484909b0799762
+              name: 'Ruuvitag TX Power ({#DISPLAYNAME})'
+              type: TRAP
+              key: 'ruuvitag.tx_power[{#NAME}]'
+              delay: '0'
+              tags:
+                -
+                  tag: Application
+                  value: Ruuvitag
+          graph_prototypes:
+            -
+              uuid: e404a44168074f15bf21f1b8c518dd3f
+              name: 'Ruuvitag Temperature ({#DISPLAYNAME})'
+              graph_items:
+                -
+                  color: FB8C00
+                  calc_fnc: ALL
+                  item:
+                    host: Ruuvitag
+                    key: 'ruuvitag.temperature[{#NAME}]'
