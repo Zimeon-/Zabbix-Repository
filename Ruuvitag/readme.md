@@ -8,13 +8,17 @@ Zabbix Ruuvitag
 6. Add Userparameters to the end of the zabbix agent configuration # vi /etc/zabbix/zabbix_agentd.conf
 
 #Ruuvitag Key
+
 UserParameter=ruuvitag.get,python /etc/zabbix/scripts/ruuvitag/get_data.py
+
 UserParameter=ruuvitag.discover,python /etc/zabbix/scripts/ruuvitag/discover_tags.py
 
 7. Restart the Zabbix Agent for user parameters to work.
 8. Test the python script to get date # python /etc/zabbix/scripts/ruuvitag/get_data.py
 9. Add a cron entry for data sender # crontab -e (You can use the zabbix agent item instead of crontab, test functionality!)
+
 #Send Ruuvitag Updates every 1min
+
 */1 * * * * python /etc/zabbix/scripts/ruuvitag/get_data.py
 10. Import Zabbix Template .yaml
 11. Add Zabbix Template to your host of choise
