@@ -6,7 +6,7 @@
 > ![image](https://github.com/user-attachments/assets/db9089c5-faad-4b31-8900-59909c1c4b2c)
 - Generate a new API key at https://unifi.ui.com/api and save it to your favorite password manager
 > ![image_apiv01](https://github.com/user-attachments/assets/25de182a-af71-46af-90f4-3c0cabdfe132)
-- Create a new [host](https://www.zabbix.com/documentation/current/en/manual/config/hosts/host) in Zabbix for Unifi API monitoring
+- Create a new [host](https://www.zabbix.com/documentation/current/en/manual/config/hosts/host) in Zabbix for Unifi API monitoring. No interface is needed for newer Zabbix versions.
 - Link template "Ubiquiti UniFi API"
 - Configure API key {$APIKEY} in host inherited template [macros](https://www.zabbix.com/documentation/current/en/manual/config/macros)
 
