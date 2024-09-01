@@ -4,7 +4,10 @@
 - Download and [import a template](https://www.zabbix.com/documentation/current/manual/xml_export_import/templates#importing) into the supported Zabbix version.
 - Generate a new API key at https://unifi.ui.com/api and save it to your favorite password manager
 - Create a new [host](https://www.zabbix.com/documentation/current/en/manual/config/hosts/host) in Zabbix for Unifi API monitoring
-- Configure API key in host inherited template [macros](https://www.zabbix.com/documentation/current/en/manual/config/macros)
+- Link template "Ubiquiti UniFi API"
+- Configure API key {$APIKEY} in host inherited template [macros](https://www.zabbix.com/documentation/current/en/manual/config/macros)
+
+- Note: Template "Ubiquiti UniFi API Host" is used by any discovered Unifi Hosts (Gateways). Discovered Hosts are created in "Unifi Site Hosts" Host Group automatically.
 
 ## Template Zabbix results
 ![msedge_avPwOZ23Wv](https://github.com/user-attachments/assets/ff59e3fc-e427-4ca8-9f8d-aa9ef08faa42)
