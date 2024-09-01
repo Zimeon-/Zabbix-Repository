@@ -1,0 +1,757 @@
+zabbix_export:
+  version: '7.0'
+  template_groups:
+    - uuid: 7df96b18c230490a9a0a9e2307226338
+      name: Templates
+  host_groups:
+    - uuid: abae26528296434b8b93c009f75d410b
+      name: Test
+  templates:
+    - uuid: 062e9b53e601427db62d21558c9b5d99
+      template: 'Ubiquiti UniFi API'
+      name: 'Ubiquiti UniFi API'
+      description: |
+        Zabbix Unifi API monitoring template version 01092014 for Unifi API version 0.1 (https://developer.ui.com/unifi-api/)
+        
+        Template available at https://github.com/Zimeon-/Zabbix-Repository/tree/master/UnifiAPI
+      groups:
+        - name: Templates
+      items:
+        - uuid: bcd77fc83418401984ba49a218a4a464
+          name: 'Unifi API Raw: Hosts'
+          type: HTTP_AGENT
+          key: unifi.api.hosts
+          delay: 12h
+          history: '0'
+          value_type: TEXT
+          trends: '0'
+          url: 'https://api.ui.com/ea/hosts'
+          headers:
+            - name: Accept
+              value: application/json
+            - name: x-api-key
+              value: '{$APIKEY}'
+          tags:
+            - tag: component
+              value: raw
+        - uuid: 020a80b4e4db471da397db6f152651d7
+          name: 'Unifi API Raw: Sites'
+          type: HTTP_AGENT
+          key: unifi.api.sites
+          history: '0'
+          value_type: TEXT
+          trends: '0'
+          url: 'https://api.ui.com/ea/sites'
+          headers:
+            - name: Accept
+              value: application/json
+            - name: x-api-key
+              value: '{$APIKEY}'
+          tags:
+            - tag: component
+              value: raw
+      discovery_rules:
+        - uuid: e29c11c782014aa6a22fd7991f6d4ef4
+          name: 'Discover Unifi Hosts'
+          type: DEPENDENT
+          key: unifi.api.discover.hosts
+          delay: '0'
+          host_prototypes:
+            - uuid: 1cbf4d69cdbb43959561a1fb0ef20993
+              host: '{#HARDWAREID}'
+              name: '{#NAME}'
+              inventory_mode: AUTOMATIC
+              group_links:
+                - group:
+                    name: Test
+              templates:
+                - name: 'Ubiquiti UniFi API Host'
+              macros:
+                - macro: '{$HOSTID}'
+                  value: '{#HOSTID}'
+                  description: 'Unifi API Host ID'
+          master_item:
+            key: unifi.api.hosts
+          lld_macro_paths:
+            - lld_macro: '{#HARDWAREID}'
+              path: $..hardwareId.first()
+            - lld_macro: '{#HOSTID}'
+              path: $..id.first()
+            - lld_macro: '{#NAME}'
+              path: $..reportedState.hostname.first()
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - '$.data[*]'
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  var obj=JSON.parse(value);
+                  for (i = 0; i < Object.keys(obj).length; i++) {
+                      delete obj[i]["reportedState"]["controllers"];
+                      delete obj[i]["reportedState"]["controllers"];
+                      delete obj[i]["features"];
+                      delete obj[i]["userData"];
+                  }
+                  return JSON.stringify(obj)
+        - uuid: eeb0278d474147e0a0d67ebbf2cc8552
+          name: 'Discover Unifi Sites'
+          type: DEPENDENT
+          key: unifi.api.discover.sites
+          delay: '0'
+          item_prototypes:
+            - uuid: b966972905f3432aa7524c051edbc4a7
+              name: 'Site {#NAME} Critical Notifications'
+              type: DEPENDENT
+              key: 'unifi.api.site.counts.criticalNotification[{#NAME}]'
+              delay: '0'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$..[?(@.siteId=="{#SITEID}")].statistics.counts.criticalNotification.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 10m
+              master_item:
+                key: unifi.api.sites
+              tags:
+                - tag: component
+                  value: site
+                - tag: type
+                  value: statistics
+                - tag: 'Unifi Site'
+                  value: '{#NAME}'
+              trigger_prototypes:
+                - uuid: 0407faf7981c4c3ca013703d29a12fcf
+                  expression: 'last(/Ubiquiti UniFi API/unifi.api.site.counts.criticalNotification[{#NAME}])>0'
+                  name: 'Site {#NAME} has {ITEM.LASTVALUE} critical notifications'
+                  priority: HIGH
+            - uuid: a6e164db52174bdf82cca9c981817c7a
+              name: 'Site {#NAME} Guest clients'
+              type: DEPENDENT
+              key: 'unifi.api.site.counts.guestClient[{#NAME}]'
+              delay: '0'
+              units: clients
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$..[?(@.siteId=="{#SITEID}")].statistics.counts.guestClient.first()'
+              master_item:
+                key: unifi.api.sites
+              tags:
+                - tag: component
+                  value: site
+                - tag: type
+                  value: statistics
+                - tag: 'Unifi Site'
+                  value: '{#NAME}'
+            - uuid: fcb0f008e6304a00a88288a2bdea38c0
+              name: 'Site {#NAME} Offline Devices'
+              type: DEPENDENT
+              key: 'unifi.api.site.counts.offlineDevice[{#NAME}]'
+              delay: '0'
+              units: devices
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$..[?(@.siteId=="{#SITEID}")].statistics.counts.offlineDevice.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 10m
+              master_item:
+                key: unifi.api.sites
+              tags:
+                - tag: component
+                  value: site
+                - tag: type
+                  value: statistics
+                - tag: 'Unifi Site'
+                  value: '{#NAME}'
+              trigger_prototypes:
+                - uuid: 7069bd4e9b4f4991821dde9c45c0dae5
+                  expression: 'last(/Ubiquiti UniFi API/unifi.api.site.counts.offlineDevice[{#NAME}])=1'
+                  name: 'Site {#NAME} has {ITEM.LASTVALUE} offline device'
+                  priority: WARNING
+                - uuid: 1eba97c7813c4c9c98ca465a73ef5c8e
+                  expression: 'last(/Ubiquiti UniFi API/unifi.api.site.counts.offlineDevice[{#NAME}])>1'
+                  name: 'Site {#NAME} has {ITEM.LASTVALUE} offline devices'
+                  priority: AVERAGE
+            - uuid: d42287259b4d4a3bb600a594a6a96f3f
+              name: 'Site {#NAME} Offline Gateway devices'
+              type: DEPENDENT
+              key: 'unifi.api.site.counts.offlineGatewayDevice[{#NAME}]'
+              delay: '0'
+              units: devices
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$..[?(@.siteId=="{#SITEID}")].statistics.counts.offlineGatewayDevice.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 10m
+              master_item:
+                key: unifi.api.sites
+              tags:
+                - tag: component
+                  value: site
+                - tag: type
+                  value: statistics
+                - tag: 'Unifi Site'
+                  value: '{#NAME}'
+              trigger_prototypes:
+                - uuid: 37a436e7b5f84cd195a19b20e2915df5
+                  expression: 'last(/Ubiquiti UniFi API/unifi.api.site.counts.offlineGatewayDevice[{#NAME}])>0'
+                  name: 'Site {#NAME} has {ITEM.LASTVALUE} Offline gateway devices'
+                  priority: HIGH
+            - uuid: dc6467e45f8c4eb1a14b46010b1824c4
+              name: 'Site {#NAME} Offline Wifi devices'
+              type: DEPENDENT
+              key: 'unifi.api.site.counts.offlineWifiDevice[{#NAME}]'
+              delay: '0'
+              units: devices
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$..[?(@.siteId=="{#SITEID}")].statistics.counts.offlineWifiDevice.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 10m
+              master_item:
+                key: unifi.api.sites
+              tags:
+                - tag: component
+                  value: site
+                - tag: type
+                  value: statistics
+                - tag: 'Unifi Site'
+                  value: '{#NAME}'
+              trigger_prototypes:
+                - uuid: 9aa6fd25fe9f484b9ae416af45aa7fbc
+                  expression: 'last(/Ubiquiti UniFi API/unifi.api.site.counts.offlineWifiDevice[{#NAME}])=1'
+                  name: 'Site {#NAME} has {ITEM.LASTVALUE} offline wifi device'
+                  priority: WARNING
+                - uuid: efaa2dca12c8484ba6dda2c08d7a2b1b
+                  expression: 'last(/Ubiquiti UniFi API/unifi.api.site.counts.offlineWifiDevice[{#NAME}])>1'
+                  name: 'Site {#NAME} has {ITEM.LASTVALUE} offline wifi devices'
+                  priority: AVERAGE
+            - uuid: ae5c9a725cc3407880c894a21667ffcf
+              name: 'Site {#NAME} Devices pending update'
+              type: DEPENDENT
+              key: 'unifi.api.site.counts.pendingUpdateDevice[{#NAME}]'
+              delay: '0'
+              units: devices
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$..[?(@.siteId=="{#SITEID}")].statistics.counts.pendingUpdateDevice.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 10m
+              master_item:
+                key: unifi.api.sites
+              tags:
+                - tag: component
+                  value: site
+                - tag: type
+                  value: statistics
+                - tag: 'Unifi Site'
+                  value: '{#NAME}'
+              trigger_prototypes:
+                - uuid: 52aea0c358a34f31bf352628d0bdf8f5
+                  expression: 'last(/Ubiquiti UniFi API/unifi.api.site.counts.pendingUpdateDevice[{#NAME}])>0'
+                  name: 'Site {#NAME} has {ITEM.LASTVALUE} devices pending updates'
+                  priority: INFO
+            - uuid: 090a3a6a1d7b46cda382a41ea9e0ac8e
+              name: 'Site {#NAME} Total devices'
+              type: DEPENDENT
+              key: 'unifi.api.site.counts.totalDevice[{#NAME}]'
+              delay: '0'
+              units: devices
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$..[?(@.siteId=="{#SITEID}")].statistics.counts.totalDevice.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 10m
+              master_item:
+                key: unifi.api.sites
+              tags:
+                - tag: component
+                  value: site
+                - tag: type
+                  value: statistics
+                - tag: 'Unifi Site'
+                  value: '{#NAME}'
+            - uuid: b43e5c91059f4b8fb085acd944b72328
+              name: 'Site {#NAME} Wan txRetry'
+              type: DEPENDENT
+              key: 'unifi.api.site.counts.wantxRetry[{#NAME}]'
+              delay: '0'
+              value_type: FLOAT
+              units: '%'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$..[?(@.siteId=="{#SITEID}")].statistics.percentages.txRetry.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 10m
+              master_item:
+                key: unifi.api.sites
+              tags:
+                - tag: component
+                  value: site
+                - tag: type
+                  value: statistics
+                - tag: 'Unifi Site'
+                  value: '{#NAME}'
+            - uuid: f1f0a7d7df4f404f8583b5c78d283901
+              name: 'Site {#NAME} Wan Uptime'
+              type: DEPENDENT
+              key: 'unifi.api.site.counts.wanUptime[{#NAME}]'
+              delay: '0'
+              units: '%'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$..[?(@.siteId=="{#SITEID}")].statistics.percentages.wanUptime.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 10m
+              master_item:
+                key: unifi.api.sites
+              tags:
+                - tag: component
+                  value: site
+                - tag: type
+                  value: statistics
+                - tag: 'Unifi Site'
+                  value: '{#NAME}'
+            - uuid: e55ef25b43114d919d7dbd86cae395b6
+              name: 'Site {#NAME} Wifi Clients'
+              type: DEPENDENT
+              key: 'unifi.api.site.counts.wifiClient[{#NAME}]'
+              delay: '0'
+              units: clients
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$..[?(@.siteId=="{#SITEID}")].statistics.counts.wifiClient.first()'
+              master_item:
+                key: unifi.api.sites
+              tags:
+                - tag: component
+                  value: site
+                - tag: type
+                  value: statistics
+                - tag: 'Unifi Site'
+                  value: '{#NAME}'
+            - uuid: b730f2d41d93450b8774d7fb03e8fd60
+              name: 'Site {#NAME} Wifi Devices'
+              type: DEPENDENT
+              key: 'unifi.api.site.counts.wifiDevice[{#NAME}]'
+              delay: '0'
+              units: devices
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$..[?(@.siteId=="{#SITEID}")].statistics.counts.wifiDevice.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 10m
+              master_item:
+                key: unifi.api.sites
+              tags:
+                - tag: component
+                  value: site
+                - tag: type
+                  value: statistics
+                - tag: 'Unifi Site'
+                  value: '{#NAME}'
+            - uuid: d7847cdf0b9c4be9a1d6012050027395
+              name: 'Site {#NAME} Wired clients'
+              type: DEPENDENT
+              key: 'unifi.api.site.counts.wiredClient[{#NAME}]'
+              delay: '0'
+              units: clients
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$..[?(@.siteId=="{#SITEID}")].statistics.counts.wiredClient.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 10m
+              master_item:
+                key: unifi.api.sites
+              tags:
+                - tag: component
+                  value: site
+                - tag: type
+                  value: statistics
+                - tag: 'Unifi Site'
+                  value: '{#NAME}'
+            - uuid: dfe964e1e63140aa8d9c70b8439cf668
+              name: 'Site {#NAME} Wired Devices'
+              type: DEPENDENT
+              key: 'unifi.api.site.counts.wiredDevice[{#NAME}]'
+              delay: '0'
+              units: devices
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$..[?(@.siteId=="{#SITEID}")].statistics.counts.wiredDevice.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 10m
+              master_item:
+                key: unifi.api.sites
+              tags:
+                - tag: component
+                  value: site
+                - tag: type
+                  value: statistics
+                - tag: 'Unifi Site'
+                  value: '{#NAME}'
+            - uuid: 171c4fe0593c47ec9112151fffb9eb18
+              name: 'Site {#NAME} Subscription End Time'
+              type: DEPENDENT
+              key: 'unifi.api.site.subscriptionEndTime[{#NAME}]'
+              delay: '0'
+              value_type: TEXT
+              trends: '0'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$..[?(@.siteId=="{#SITEID}")].subscriptionEndTime.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1h
+              master_item:
+                key: unifi.api.sites
+              tags:
+                - tag: component
+                  value: site
+                - tag: type
+                  value: statistics
+                - tag: 'Unifi Site'
+                  value: '{#NAME}'
+          master_item:
+            key: unifi.api.sites
+          lld_macro_paths:
+            - lld_macro: '{#HOSTID}'
+              path: $..hostId.first()
+            - lld_macro: '{#NAME}'
+              path: $..meta.name.first()
+            - lld_macro: '{#SITEID}'
+              path: $..siteId.first()
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - '$.data[*]'
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  var obj=JSON.parse(value);
+                  for (i = 0; i < Object.keys(obj).length; i++) {
+                      delete obj[i]["statistics"];
+                  }
+                  return JSON.stringify(obj)
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 12h
+      macros:
+        - macro: '{$APIKEY}'
+          type: SECRET_TEXT
+          description: 'API Key to access api.ui.com'
+    - uuid: d8cf0c6a2d19418b8e7c2adcb9c2b4c1
+      template: 'Ubiquiti UniFi API Host'
+      name: 'Ubiquiti UniFi API Host'
+      description: |
+        Zabbix Unifi API monitoring template version 01092014 for Unifi API version 0.1 (https://developer.ui.com/unifi-api/)
+        
+        Template available at https://github.com/Zimeon-/Zabbix-Repository/tree/master/UnifiAPI
+      groups:
+        - name: Templates
+      items:
+        - uuid: 12960416c3234602a531ccb4d3b5b27a
+          name: 'Hardware Type'
+          type: DEPENDENT
+          key: unifi.api.host.hwtype
+          delay: '0'
+          value_type: TEXT
+          trends: '0'
+          inventory_link: HARDWARE
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $..reportedState.hardware.name.first()
+          master_item:
+            key: unifi.api.hosts
+          tags:
+            - tag: component
+              value: 'Unifi Gateway'
+        - uuid: 065c4435662d4300a7ebcc9a999ebb6b
+          name: 'Blocked State'
+          type: DEPENDENT
+          key: unifi.api.host.isBlocked
+          delay: '0'
+          value_type: TEXT
+          trends: '0'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $..isBlocked.first()
+          master_item:
+            key: unifi.api.hosts
+          tags:
+            - tag: component
+              value: 'Unifi Gateway'
+        - uuid: 425f09b3fa0e418589feb315c0c19a53
+          name: 'Latest Backup time'
+          type: DEPENDENT
+          key: unifi.api.host.latestBackupTime
+          delay: '0'
+          value_type: TEXT
+          trends: '0'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $..latestBackupTime.first()
+          master_item:
+            key: unifi.api.hosts
+          tags:
+            - tag: component
+              value: 'Unifi Gateway'
+        - uuid: e4044d85dde243ddae2066de22a02764
+          name: 'Public IP Address'
+          type: DEPENDENT
+          key: unifi.api.host.publicip
+          delay: '0'
+          value_type: TEXT
+          trends: '0'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $..ip.first()
+          master_item:
+            key: unifi.api.hosts
+          tags:
+            - tag: component
+              value: 'Unifi Gateway'
+        - uuid: 5c86249852e3457d9a6484a46ec8d589
+          name: 'Hardware Serial Number'
+          type: DEPENDENT
+          key: unifi.api.host.serial
+          delay: '0'
+          value_type: TEXT
+          trends: '0'
+          inventory_link: SERIALNO_A
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $..reportedState.hardware.serialno.first()
+          master_item:
+            key: unifi.api.hosts
+          tags:
+            - tag: component
+              value: 'Unifi Gateway'
+        - uuid: f7eb1f5a815d437c8e02217a58cafab2
+          name: 'Unifi Stack'
+          type: DEPENDENT
+          key: unifi.api.host.stack
+          delay: '0'
+          value_type: TEXT
+          trends: '0'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $..reportedState.isStacked.first()
+          master_item:
+            key: unifi.api.hosts
+          tags:
+            - tag: component
+              value: 'Unifi Gateway'
+        - uuid: ccf31a17c95f4dba8b9a0bdd0d0bf6af
+          name: 'Unadpoted UnifiIOS devices'
+          type: DEPENDENT
+          key: unifi.api.host.unadoptedUnifiOSDevices
+          delay: '0'
+          trends: '0'
+          units: devices
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $..reportedState.unadoptedUnifiOSDevices.first()
+            - type: REGEX
+              parameters:
+                - '^\[(.*)\]$'
+                - \1
+            - type: JSONPATH
+              parameters:
+                - $.totalCount
+              error_handler: CUSTOM_VALUE
+              error_handler_params: '0'
+          master_item:
+            key: unifi.api.hosts
+          tags:
+            - tag: component
+              value: 'Unifi Gateway'
+        - uuid: 6a8a3df76868425f95f7bac84319e26d
+          name: 'Unifi API Raw: Hosts'
+          type: HTTP_AGENT
+          key: unifi.api.hosts
+          history: '0'
+          value_type: TEXT
+          trends: '0'
+          url: 'https://api.ui.com/ea/hosts/{$HOSTID}'
+          headers:
+            - name: Accept
+              value: application/json
+            - name: x-api-key
+              value: '{$APIKEY}'
+          tags:
+            - tag: component
+              value: raw
+      discovery_rules:
+        - uuid: 0fcae29783114877a760de040a75698e
+          name: 'Discover Host Controllers'
+          type: DEPENDENT
+          key: unifi.discover.hostcontrollers
+          delay: '0'
+          filter:
+            conditions:
+              - macro: '{#INSTALLSTATE}'
+                value: uninstalled
+                operator: NOT_MATCHES_REGEX
+                formulaid: A
+          item_prototypes:
+            - uuid: 28b446e2b2414a59a586cc1ac52cd421
+              name: '{#HOSTNAME} Controllers: {#CONTROLLERNAME} isRunning'
+              type: DEPENDENT
+              key: 'unifi.api.host.controller.isRunning[{#CONTROLLERNAME}]'
+              delay: '0'
+              value_type: TEXT
+              trends: '0'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$..reportedState.controllers[?(@.name=="{#CONTROLLERNAME}")].isRunning.first()'
+              master_item:
+                key: unifi.api.hosts
+              tags:
+                - tag: controller
+                  value: '{#CONTROLLERNAME}'
+                - tag: type
+                  value: 'Unifi Controller'
+            - uuid: 8277809ecd2246ddaa1f29f11453a81e
+              name: '{#HOSTNAME} Controllers: {#CONTROLLERNAME} unadoptedDevices'
+              type: DEPENDENT
+              key: 'unifi.api.host.controller.unadoptedDevices[{#CONTROLLERNAME}]'
+              delay: '0'
+              value_type: TEXT
+              trends: '0'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$..reportedState.controllers[?(@.name=="{#CONTROLLERNAME}")].unadoptedDevices.first()'
+                - type: REGEX
+                  parameters:
+                    - '^\[(.*)\]$'
+                    - \1
+                - type: JSONPATH
+                  parameters:
+                    - $.totalCount
+                  error_handler: CUSTOM_VALUE
+                  error_handler_params: '0'
+              master_item:
+                key: unifi.api.hosts
+              tags:
+                - tag: controller
+                  value: '{#CONTROLLERNAME}'
+                - tag: type
+                  value: 'Unifi Controller'
+              trigger_prototypes:
+                - uuid: 88664528aaaf4ac7834bbc54c2507623
+                  expression: 'last(/Ubiquiti UniFi API Host/unifi.api.host.controller.unadoptedDevices[{#CONTROLLERNAME}])=1'
+                  name: '{ITEM.LASTVALUE} unadpoted device found for {#CONTROLLERNAME} controller'
+                  priority: INFO
+                - uuid: dffaffb9682d44fe9344375a5ae87d6b
+                  expression: 'last(/Ubiquiti UniFi API Host/unifi.api.host.controller.unadoptedDevices[{#CONTROLLERNAME}])>1'
+                  name: '{ITEM.LASTVALUE} unadpoted devices found for {#CONTROLLERNAME} controller'
+                  priority: INFO
+            - uuid: 0429e2473c1e40c5ab73b81e4d44c0b8
+              name: '{#HOSTNAME} Controllers: {#CONTROLLERNAME} updateAvailable'
+              type: DEPENDENT
+              key: 'unifi.api.host.controller.updateAvailable[{#CONTROLLERNAME}]'
+              delay: '0'
+              value_type: TEXT
+              trends: '0'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$..reportedState.controllers[?(@.name=="{#CONTROLLERNAME}")].updateAvailable.first()'
+              master_item:
+                key: unifi.api.hosts
+              tags:
+                - tag: controller
+                  value: '{#CONTROLLERNAME}'
+                - tag: type
+                  value: 'Unifi Controller'
+              trigger_prototypes:
+                - uuid: 30db991557ee45a78e918bc1569d0bfc
+                  expression: 'find(/Ubiquiti UniFi API Host/unifi.api.host.controller.updateAvailable[{#CONTROLLERNAME}],#1,"regexp","(null)")<>1'
+                  name: 'New software version  {ITEM.LASTVALUE} available for {#CONTROLLERNAME}'
+                  priority: INFO
+            - uuid: 603b279e3119445a999d025e46a388c5
+              name: '{#HOSTNAME} Controllers: {#CONTROLLERNAME} version'
+              type: DEPENDENT
+              key: 'unifi.api.host.controller.version[{#CONTROLLERNAME}]'
+              delay: '0'
+              value_type: TEXT
+              trends: '0'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$..reportedState.controllers[?(@.name=="{#CONTROLLERNAME}")].version.first()'
+              master_item:
+                key: unifi.api.hosts
+              tags:
+                - tag: controller
+                  value: '{#CONTROLLERNAME}'
+                - tag: type
+                  value: 'Unifi Controller'
+              trigger_prototypes:
+                - uuid: 41c3d7ff77654e6cb3172e1aa9f7442e
+                  expression: 'change(/Ubiquiti UniFi API Host/unifi.api.host.controller.version[{#CONTROLLERNAME}])=1'
+                  name: 'Software version for {#CONTROLLERNAME} changed'
+                  priority: INFO
+          master_item:
+            key: unifi.api.hosts
+          lld_macro_paths:
+            - lld_macro: '{#CONTROLLERNAME}'
+              path: $..name.first()
+            - lld_macro: '{#HOSTNAME}'
+              path: $..unifi_hostname.first()
+            - lld_macro: '{#INSTALLED}'
+              path: $..isInstalled.first()
+            - lld_macro: '{#INSTALLSTATE}'
+              path: $..installState.first()
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  var obj=JSON.parse(value);
+                  
+                  //Get the Hostname
+                  var unifi_hostname=obj.data.reportedState.hostname;
+                  //Insert hostname to each controller for preprosessing LLD
+                  obj.data.reportedState.controllers.forEach(function(controller) {
+                      controller.unifi_hostname = unifi_hostname;
+                  });
+                  
+                  return JSON.stringify(obj.data.reportedState.controllers);
+      macros:
+        - macro: '{$APIKEY}'
+          type: SECRET_TEXT
+          description: 'API Key to access api.ui.com'
