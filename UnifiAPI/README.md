@@ -6,6 +6,10 @@
 - Create a new [host](https://www.zabbix.com/documentation/current/en/manual/config/hosts/host) in Zabbix for Unifi API monitoring
 - Configure API key in host inherited template [macros](https://www.zabbix.com/documentation/current/en/manual/config/macros)
 
+## Template Zabbix results
+![msedge_avPwOZ23Wv](https://github.com/user-attachments/assets/ff59e3fc-e427-4ca8-9f8d-aa9ef08faa42)
+![msedge_l3VxjwhMnn](https://github.com/user-attachments/assets/730b7c75-8aac-46cd-9f48-2d25ed5f5e75)
+
 Resources:
 - https://ubntwiki.com/products/software/unifi-controller/api
 - https://developer.ui.com/unifi-api/
