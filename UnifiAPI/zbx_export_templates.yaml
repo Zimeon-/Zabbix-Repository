@@ -4,8 +4,8 @@ zabbix_export:
     - uuid: 7df96b18c230490a9a0a9e2307226338
       name: Templates
   host_groups:
-    - uuid: abae26528296434b8b93c009f75d410b
-      name: Test
+    - uuid: cf0ece1934724fc29985a527d5c75864
+      name: 'Unifi Site Hosts'
   templates:
     - uuid: 062e9b53e601427db62d21558c9b5d99
       template: 'Ubiquiti UniFi API'
@@ -63,7 +63,7 @@ zabbix_export:
               inventory_mode: AUTOMATIC
               group_links:
                 - group:
-                    name: Test
+                    name: 'Unifi Site Hosts'
               templates:
                 - name: 'Ubiquiti UniFi API Host'
               macros:
