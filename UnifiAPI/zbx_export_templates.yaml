@@ -11,7 +11,7 @@ zabbix_export:
       template: 'Ubiquiti UniFi API'
       name: 'Ubiquiti UniFi API'
       description: |
-        Zabbix Unifi API monitoring template version 01092014 for Unifi API version 0.1 (https://developer.ui.com/unifi-api/)
+        Zabbix Unifi API monitoring template version 03092014 for Unifi API version 0.1 (https://developer.ui.com/unifi-api/)
         
         Template available at https://github.com/Zimeon-/Zabbix-Repository/tree/master/UnifiAPI
       groups:
@@ -418,12 +418,17 @@ zabbix_export:
               type: DEPENDENT
               key: 'unifi.api.site.subscriptionEndTime[{#NAME}]'
               delay: '0'
-              value_type: TEXT
               trends: '0'
+              units: unixtime
               preprocessing:
                 - type: JSONPATH
                   parameters:
                     - '$..[?(@.siteId=="{#SITEID}")].subscriptionEndTime.first()'
+                - type: JAVASCRIPT
+                  parameters:
+                    - |
+                      var date = new Date(value);
+                      return Math.floor(date.getTime() / 1000);
                 - type: DISCARD_UNCHANGED_HEARTBEAT
                   parameters:
                     - 1h
@@ -468,7 +473,7 @@ zabbix_export:
       template: 'Ubiquiti UniFi API Host'
       name: 'Ubiquiti UniFi API Host'
       description: |
-        Zabbix Unifi API monitoring template version 01092014 for Unifi API version 0.1 (https://developer.ui.com/unifi-api/)
+        Zabbix Unifi API monitoring template version 03092014 for Unifi API version 0.1 (https://developer.ui.com/unifi-api/). Used by hosts discovered in Ubiquiti UniFi API.
         
         Template available at https://github.com/Zimeon-/Zabbix-Repository/tree/master/UnifiAPI
       groups:
@@ -515,17 +520,29 @@ zabbix_export:
           key: unifi.api.host.latestBackupTime
           delay: '0'
           history: 90d
-          value_type: TEXT
           trends: '0'
+          units: unixtime
           preprocessing:
             - type: JSONPATH
               parameters:
                 - $..latestBackupTime.first()
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  var date = new Date(value);
+                  return Math.floor(date.getTime() / 1000);
           master_item:
             key: unifi.api.hosts
           tags:
             - tag: component
               value: 'Unifi Gateway'
+          triggers:
+            - uuid: 5d9ac579a04d48fdac3eef43c738d3be
+              expression: 'fuzzytime(/Ubiquiti UniFi API Host/unifi.api.host.latestBackupTime,{$BACKUP_INTERVAL})=0'
+              name: 'Last backup more than {$BACKUP_INTERVAL} days ago'
+              priority: AVERAGE
+              description: 'Trigger threshold defined with {$BACKUP_INTERVAL} macro. Should be 1 day more than backup interval configured on Settings->System->Backups.'
+              manual_close: 'YES'
         - uuid: e4044d85dde243ddae2066de22a02764
           name: 'Public IP Address'
           type: DEPENDENT
@@ -543,6 +560,11 @@ zabbix_export:
           tags:
             - tag: component
               value: 'Unifi Gateway'
+          triggers:
+            - uuid: 2d3854f272fa412f802dde6135a2e021
+              expression: 'change(/Ubiquiti UniFi API Host/unifi.api.host.publicip)=1'
+              name: 'Public IP Address has changed'
+              priority: INFO
         - uuid: 5c86249852e3457d9a6484a46ec8d589
           name: 'Hardware Serial Number'
           type: DEPENDENT
@@ -764,3 +786,6 @@ zabbix_export:
         - macro: '{$APIKEY}'
           type: SECRET_TEXT
           description: 'API Key to access api.ui.com'
+        - macro: '{$BACKUP_INTERVAL}'
+          value: 2d
+          description: 'AutoBackup schedule (Daily: 2d, Weekly: 8d, Monthly: 32d). Set this threshold to at least 1 day more than backup interval to prevent false positive triggers. Default: 2d'
