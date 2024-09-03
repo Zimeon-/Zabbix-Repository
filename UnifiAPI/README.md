@@ -17,5 +17,4 @@
 ![msedge_l3VxjwhMnn](https://github.com/user-attachments/assets/730b7c75-8aac-46cd-9f48-2d25ed5f5e75)
 
 ## Resources:
-- https://ubntwiki.com/products/software/unifi-controller/api
 - https://developer.ui.com/unifi-api/
