@@ -2,7 +2,7 @@
 
 This is a modified version of Zabbix Experimental connector for data streaming (PoC) located at
 https://git.zabbix.com/projects/ZT/repos/receiver/browse. This modification removed writing to a 
-file and adds 
+file and adds sending received entries to syslog.
 
 A basic http server written on Golang to receive Zabbix server data stream and export it into file.
 Currently supports streaming of events and history data.
