@@ -1,0 +1,8 @@
+{
+    "port": "8080",
+    "data_path": "/var/log/zbx_stream/data/",
+    "log_path": "/var/log/zbx_stream/log/",
+    "enable_tls": false,
+    "cert_file": "",
+    "key_file": ""
+}
