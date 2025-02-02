@@ -157,6 +157,16 @@ func saveData(filename string, body []byte) error {
 	return nil
 }
 
+// sendToSyslog sends logs to a remote rsyslog server
+func sendToSyslog(message string) error {
+	sysLogger, err := syslog.Dial("udp", "127.0.0.1:514", syslog.LOG_INFO|syslog.LOG_USER, "ZbxStream")
+	if err != nil {
+			return fmt.Errorf("failed to connect to syslog: %w", err)
+	}
+	defer sysLogger.Close()
+
+	return sysLogger.Info(message)
+}
 
 func (h generic) validate() map[string]string {
 	errors := make(map[string]string)
